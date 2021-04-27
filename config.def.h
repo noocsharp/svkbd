@@ -1,4 +1,4 @@
-static const Bool wmborder = True;
+static const Bool wmborder = true;
 static int fontsize = 22;
 static double overlay_delay = 1.0; //in seconds
 static double repeat_delay = 0.75; //in seconds, will not work on keys with overlays

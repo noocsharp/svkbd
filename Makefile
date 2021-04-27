@@ -8,7 +8,7 @@ VERSION = 0.3
 include config.mk
 
 BIN = ${NAME}-${LAYOUT}
-SRC = drw.c ${NAME}.c util.c
+SRC = drw.c ${NAME}.c util.c swc-protocol.c
 OBJ = ${SRC:.c=.o}
 MAN1 = ${NAME}.1
 
@@ -29,7 +29,15 @@ svkbd.o: config.h layout.${LAYOUT}.h
 .c.o:
 	${CC} ${SVKBD_CFLAGS} ${SVKBD_CPPFLAGS} -c $<
 
-${OBJ}: config.h config.mk
+swc-protocol.c: $(SWCPROTO)
+	@echo GEN $@
+	wayland-scanner code < $< > $@
+
+swc-client-protocol.h: $(SWCPROTO)
+	@echo GEN $@
+	wayland-scanner client-header < $< > $@
+
+${OBJ}: config.h config.mk swc-client-protocol.h
 
 ${BIN}: ${OBJ}
 	${CC} -o ${BIN} ${OBJ} ${SVKBD_LDFLAGS}

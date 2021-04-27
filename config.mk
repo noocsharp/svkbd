@@ -9,19 +9,21 @@ X11LIB = /usr/X11R6/lib
 
 PKG_CONFIG = pkg-config
 
-# Xinerama, comment if you don't want it
-XINERAMALIBS = -L${X11LIB} -lXinerama
-XINERAMAFLAGS = -DXINERAMA
+PIXMANINC = /usr/include/pixman-1
+SWCPROTO = /usr/share/swc/swc.xml
+VKPROTO = protocols/virtual-keyboard-unstable-v1.xml
 
 # includes and libs
 INCS = -I. -I./layouts -I${X11INC} \
 	`$(PKG_CONFIG) --cflags fontconfig` \
-	`$(PKG_CONFIG) --cflags freetype2`
-LIBS = -L${X11LIB} -lX11 -lXtst -lXft ${XINERAMALIBS} \
+	`$(PKG_CONFIG) --cflags freetype2` \
+	`$(PKG_CONFIG) --cflags pixman-1`
+LIBS = -L${X11LIB} -lX11 -lwayland-client -lxkbcommon -lwld -lswc \
 	`$(PKG_CONFIG) --libs fontconfig` \
-	`$(PKG_CONFIG) --libs freetype2`
+	`$(PKG_CONFIG) --libs freetype2` \
+	`$(PKG_CONFIG) --libs pixman-1`
 
 # use system flags
 SVKBD_CFLAGS = ${CFLAGS} ${INCS}
 SVKBD_LDFLAGS = ${LDFLAGS} ${LIBS}
-SVKBD_CPPFLAGS = ${CPPFLAGS} -D_DEFAULT_SOURCE -DVERSION=\"VERSION\" ${XINERAMAFLAGS} -DLAYOUT=\"layout.${LAYOUT}.h\"
+SVKBD_CPPFLAGS = ${CPPFLAGS} -D_DEFAULT_SOURCE -DVERSION=\"VERSION\" -DLAYOUT=\"layout.${LAYOUT}.h\"
