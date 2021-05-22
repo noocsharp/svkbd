@@ -23,6 +23,7 @@
 #include "drw.h"
 #include "util.h"
 #include "swc-client-protocol.h"
+#include "input-method-unstable-v2-client-protocol.h"
 
 /* macros */
 #define LENGTH(x)		 (sizeof x / sizeof x[0])
@@ -126,6 +127,25 @@ static struct wl_surface *surface;
 static struct wl_registry *reg;
 static struct swc_panel_manager *panelman;
 static struct swc_panel *panel;
+static struct zwp_input_method_manager_v2 *immanager;
+static struct zwp_input_method_v2 *im;
+
+/* Input Method */
+#define MAX_SURROUNDING_TEXT 4000
+static char surrounding_text[MAX_SURROUNDING_TEXT];
+static char surrounding_text2[MAX_SURROUNDING_TEXT];
+static uint32_t cursor;
+static uint32_t cursor2;
+static uint32_t anchor;
+static uint32_t anchor2;
+static uint32_t cause;
+static uint32_t cause2;
+static uint32_t hint;
+static uint32_t hint2;
+static uint32_t purpose;
+static uint32_t purpose2;
+static bool active;
+static bool active2;
 
 /* configuration, allows nested code to access above variables */
 #include "config.h"
@@ -397,6 +417,8 @@ regglobal(void *d, struct wl_registry *r, uint32_t name, const char *interface, 
 		seat = wl_registry_bind(r, name, &wl_seat_interface, 1);
 	else if (strcmp(interface, "swc_panel_manager") == 0)
 		panelman = wl_registry_bind(r, name, &swc_panel_manager_interface, 1);
+	else if (strcmp(interface, "zwp_input_method_manager_v2") == 0)
+		immanager = wl_registry_bind(r, name, &zwp_input_method_manager_v2_interface, 1);
 }
 
 static void
@@ -565,6 +587,62 @@ touchcancel(void *data, struct wl_touch *wl_touch)
 
 static const struct wl_touch_listener touchlistener = { touchdown, touchup, touchmotion, touchframe , touchcancel};
 
+void
+imactivate(void *data, struct zwp_input_method_v2 *input_method)
+{
+	surrounding_text2[0] = '\0';
+	cause2 = 0;
+	hint2 = 0;
+	purpose2 = 0;
+	active2 = true;
+}
+
+void
+imdeactivate(void *data, struct zwp_input_method_v2 *input_method)
+{
+	active2 = false;
+}
+
+void
+imdone(void *data, struct zwp_input_method_v2 *input_method)
+{
+	memcpy(surrounding_text2, surrounding_text, sizeof(surrounding_text));
+	cause = cause2;
+	hint = hint2;
+	purpose = purpose2;
+	active = active2;
+}
+
+void
+imsurrounding_text(void *data, struct zwp_input_method_v2 *input_method, const char *text, uint32_t tcursor, uint32_t tanchor)
+{
+	memcpy(surrounding_text2, text, strlen(text));
+	cursor2 = tcursor;
+	anchor2 = tanchor;
+}
+
+void
+imtext_change_cause(void *data, struct zwp_input_method_v2 *input_method, uint32_t tcause)
+{
+	cause2 = tcause;
+}
+
+void
+imcontent_type(void *data, struct zwp_input_method_v2 *input_method, uint32_t thint, uint32_t tpurpose)
+{
+	hint2 = thint;
+	purpose2 = tpurpose;
+}
+
+void
+imunavailable(void *data, struct zwp_input_method_v2 *input_method)
+{
+	zwp_input_method_v2_destroy(im);
+	zwp_input_method_manager_v2_destroy(immanager);
+}
+
+static const struct zwp_input_method_v2_listener imlistener = { imactivate, imdeactivate, imsurrounding_text, imtext_change_cause, imcontent_type, imdone, imunavailable};
+
 static void
 panel_docked(void *data, struct swc_panel *panel, uint32_t length)
 {
@@ -659,6 +737,9 @@ setup(void)
 
 	if (!pointer || !touch)
 		exit(1);
+
+	im = zwp_input_method_manager_v2_get_input_method(immanager, seat);
+	zwp_input_method_v2_add_listener(im, &imlistener, NULL);
 
 	/* Apply defaults to font and colors */
 	if (!fonts[0])

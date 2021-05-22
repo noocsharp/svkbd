@@ -8,7 +8,7 @@ VERSION = 0.3
 include config.mk
 
 BIN = ${NAME}-${LAYOUT}
-SRC = drw.c ${NAME}.c util.c swc-protocol.c
+SRC = drw.c ${NAME}.c util.c swc-protocol.c input-method-protocol.c
 OBJ = ${SRC:.c=.o}
 MAN1 = ${NAME}.1
 
@@ -37,7 +37,19 @@ swc-client-protocol.h: $(SWCPROTO)
 	@echo GEN $@
 	wayland-scanner client-header < $< > $@
 
-${OBJ}: config.h config.mk swc-client-protocol.h
+input-method-protocol.c: $(IMPROTO)
+	@echo GEN $@
+	wayland-scanner code < $< > $@
+
+input-method-client-protocol.h: $(IMPROTO)
+	@echo GEN $@
+	wayland-scanner client-header < $< > $@
+
+text-input-client-protocol.h: $(TIPROTO)
+	@echo GEN $@
+	wayland-scanner client-header < $< > $@
+
+${OBJ}: config.h config.mk swc-client-protocol.h input-method-client-protocol.h text-input-client-protocol.h
 
 ${BIN}: ${OBJ}
 	${CC} -o ${BIN} ${OBJ} ${SVKBD_LDFLAGS}

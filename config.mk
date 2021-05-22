@@ -11,7 +11,8 @@ PKG_CONFIG = pkg-config
 
 PIXMANINC = /usr/include/pixman-1
 SWCPROTO = /usr/share/swc/swc.xml
-VKPROTO = protocols/virtual-keyboard-unstable-v1.xml
+IMPROTO = protocol/input-method-unstable-v2.xml
+TIPROTO = /usr/share/wayland-protocols/unstable/text-input/text-input-unstable-v3.xml
 
 # includes and libs
 INCS = -I. -I./layouts -I${X11INC} \
