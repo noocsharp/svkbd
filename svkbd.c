@@ -655,7 +655,9 @@ setup(void)
 	touch = wl_seat_get_touch(seat);
 	wl_touch_add_listener(touch, &touchlistener, NULL);
 
-	if (!pointer)
+	wl_display_roundtrip(dpy);
+
+	if (!pointer || !touch)
 		exit(1);
 
 	/* Apply defaults to font and colors */
