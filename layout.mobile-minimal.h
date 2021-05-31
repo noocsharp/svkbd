@@ -40,7 +40,7 @@ static Key keys_en[KEYS] = {
 	{ 0 }, /* New row */
 	{ "⇍ Bksp", 0, XKB_KEY_BackSpace, 2 },
 	{ "↺", 0, XKB_KEY_Cancel, 1},
-	{ "", 0, XKB_KEY_space, 2 },
+	{ " ", 0, XKB_KEY_space, 2 },
 	{ "↲ Enter", 0, XKB_KEY_Return, 2 },
 };
 
@@ -77,7 +77,7 @@ static Key keys_symbols[KEYS] = {
 	{ 0 }, /* New row */
 	{ "↺", 0, XKB_KEY_Cancel, 1},
 	{ "Shft", 0, XKB_KEY_Shift_L, 1 },
-	{ "", 0, XKB_KEY_space, 2 },
+	{ " ", 0, XKB_KEY_space, 2 },
 	{ "↲ Enter", 0, XKB_KEY_Return, 2 },
 };
 

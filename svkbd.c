@@ -111,11 +111,13 @@ static struct {
 	int x, y;
 } ptrstate;
 
+#define MAX_POINTS 32
+
 /* we assume that the slot id is at maximum the number of fingers on the screen */
 static struct {
 	int x, y;
 	Key *k;
-} touchstate[32];
+} touchstate[MAX_POINTS];
 
 static int mon = -1;
 static struct wl_display *dpy;
@@ -146,6 +148,7 @@ static uint32_t purpose;
 static uint32_t purpose2;
 static bool active;
 static bool active2;
+static uint32_t serial = 0;
 
 /* configuration, allows nested code to access above variables */
 #include "config.h"
@@ -389,23 +392,32 @@ unpress(Key *k)
 		switch(k->keysym) {
 		case XKB_KEY_Cancel:
 			cyclelayer();
-			break;
+			return;
 		case XKB_KEY_script_switch:
 			togglelayer();
-			break;
+			return;
 		case XKB_KEY_KP_Insert:
 			enableoverlays = !enableoverlays;
-			break;
+			return;
 		case XKB_KEY_Break:
 			running = false;
+			return;
+		case XKB_KEY_BackSpace:
+			zwp_input_method_v2_delete_surrounding_text(im, 1, 0);
+			break;
+		case XKB_KEY_Return:
+			zwp_input_method_v2_commit_string(im, "\n");
 			break;
 		default:
+			zwp_input_method_v2_commit_string(im, k->label);
 			break;
 		}
+		zwp_input_method_v2_commit(im, serial);
+
 		k->pressed = false;
+		fprintf(stderr, "unpress of %s, %d\n", k->label, k->pressed);
 	}
 
-	fprintf(stderr, "unpress of %s\n", k->label);
 }
 
 static void
@@ -521,8 +533,8 @@ touchdown(void *data, struct wl_touch *wl_touch, uint32_t serial, uint32_t time,
 	Key *k;
 
 	ispressing = true;
-	touchstate[id].x = wl_fixed_to_double(x);
-	touchstate[id].y = wl_fixed_to_double(y);
+	touchstate[id].x = wl_fixed_to_int(x);
+	touchstate[id].y = wl_fixed_to_int(y);
 
 	if ((k = findkey(touchstate[id].x, touchstate[id].y)))
 		press(k);
@@ -542,8 +554,8 @@ touchup(void *data, struct wl_touch *wl_touch, uint32_t serial, uint32_t time, i
 	touchstate[id].k = NULL;
 	*/
 	unpress(touchstate[id].k);
-	touchstate[id].x = DBL_MIN;
-	touchstate[id].y = DBL_MIN;
+	touchstate[id].x = -1;
+	touchstate[id].y = -1;
 	touchstate[id].k = NULL;
 }
 
@@ -551,8 +563,8 @@ void
 touchmotion(void *data, struct wl_touch *wl_touch, uint32_t time, int32_t id, wl_fixed_t x, wl_fixed_t y)
 {
 	Key *k;
-	touchstate[id].x = wl_fixed_to_double(x);
-	touchstate[id].y = wl_fixed_to_double(y);
+	touchstate[id].x = wl_fixed_to_int(x);
+	touchstate[id].y = wl_fixed_to_int(y);
 
 	int i;
 	int lostfocus = -1;
@@ -582,6 +594,16 @@ touchframe(void *data, struct wl_touch *wl_touch)
 void
 touchcancel(void *data, struct wl_touch *wl_touch)
 {
+	int i;
+	for (i = 0; i < numkeys; i++)
+		keys[i].pressed = false;
+
+	for (i = 0; i < MAX_POINTS; i++) {
+		touchstate[i].x = -1;
+		touchstate[i].y = -1;
+		touchstate[i].k = NULL;
+	}
+	drawkeyboard();
 	fprintf(stderr, "cancel!\n");
 }
 
@@ -606,6 +628,7 @@ imdeactivate(void *data, struct zwp_input_method_v2 *input_method)
 void
 imdone(void *data, struct zwp_input_method_v2 *input_method)
 {
+	serial += 1;
 	memcpy(surrounding_text2, surrounding_text, sizeof(surrounding_text));
 	cause = cause2;
 	hint = hint2;
@@ -641,7 +664,15 @@ imunavailable(void *data, struct zwp_input_method_v2 *input_method)
 	zwp_input_method_manager_v2_destroy(immanager);
 }
 
-static const struct zwp_input_method_v2_listener imlistener = { imactivate, imdeactivate, imsurrounding_text, imtext_change_cause, imcontent_type, imdone, imunavailable};
+static const struct zwp_input_method_v2_listener imlistener = {
+	.activate = imactivate,
+	.deactivate = imdeactivate,
+	.surrounding_text = imsurrounding_text,
+	.text_change_cause = imtext_change_cause,
+	.content_type = imcontent_type,
+	.done = imdone,
+	.unavailable = imunavailable
+};
 
 static void
 panel_docked(void *data, struct swc_panel *panel, uint32_t length)
@@ -733,6 +764,10 @@ setup(void)
 	touch = wl_seat_get_touch(seat);
 	wl_touch_add_listener(touch, &touchlistener, NULL);
 
+	for (i = 0; i < MAX_POINTS; i++) {
+		touchstate[i].x = touchstate[i].y = -1;
+	}
+
 	wl_display_roundtrip(dpy);
 
 	if (!pointer || !touch)
@@ -740,6 +775,11 @@ setup(void)
 
 	im = zwp_input_method_manager_v2_get_input_method(immanager, seat);
 	zwp_input_method_v2_add_listener(im, &imlistener, NULL);
+
+	wl_display_roundtrip(dpy);
+
+	if (!im)
+		exit(1);
 
 	/* Apply defaults to font and colors */
 	if (!fonts[0])
