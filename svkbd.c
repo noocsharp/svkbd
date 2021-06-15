@@ -413,6 +413,7 @@ unpress(Key *k)
 			break;
 		}
 		zwp_input_method_v2_commit(im, serial);
+		serial += 1;
 
 		k->pressed = false;
 		fprintf(stderr, "unpress of %s, %d\n", k->label, k->pressed);
@@ -628,7 +629,6 @@ imdeactivate(void *data, struct zwp_input_method_v2 *input_method)
 void
 imdone(void *data, struct zwp_input_method_v2 *input_method)
 {
-	serial += 1;
 	memcpy(surrounding_text2, surrounding_text, sizeof(surrounding_text));
 	cause = cause2;
 	hint = hint2;
