@@ -745,6 +745,8 @@ run(void)
 			printdbg("signal received, releasing all keys");
 			running = false;
 		}
+
+		wl_display_flush(dpy);
 	}
 }
 
