@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/signalfd.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -160,6 +161,8 @@ static uint32_t serial = 0;
 static Key keys[KEYS] = { NULL };
 static Key* layers[LAYERS];
 
+static bool shift = false;
+
 void
 cleanup(void)
 {
@@ -242,40 +245,25 @@ drawkey(Key *k)
 	drw_setscheme(drw, scheme[use_scheme]);
 	drw_rect(drw, k->x, k->y, k->w, k->h, 1, 1);
 
-	if (k->keysym == XKB_KEY_KP_Insert) {
-		if (enableoverlays) {
-			l = "≅";
-		} else {
-			l = "≇";
-		}
-	} else if (k->label) {
-		l = k->label;
+	if (shift) {
+		if (k->label2)
+			l = k->label2;
+		else if (k->label)
+			l = k->label;
+		else
+			warn("key missing label");
 	} else {
-		warn("key missing label");
+		if (k->label)
+			l = k->label;
+		else
+			warn("key missing label");
 	}
+
 	h = drw->fonts[0].wld->height + 10;
 	y = k->y + (k->h / 2) - (h / 2);
 	w = TEXTW(l);
 	x = k->x + (k->w / 2) - (w / 2);
 	drw_text(drw, x, y, w, h, 0, l, 0);
-	if (k->label2) {
-		if (use_scheme == SchemeNorm)
-			use_scheme = SchemeNormShift;
-		else if (use_scheme == SchemeNormABC)
-			use_scheme = SchemeNormABCShift;
-		else if (use_scheme == SchemePress)
-			use_scheme = SchemePressShift;
-		else if (use_scheme == SchemeHighlight)
-			use_scheme = SchemeHighlightShift;
-		else if (use_scheme == SchemeOverlay)
-			use_scheme = SchemeOverlayShift;
-		drw_setscheme(drw, scheme[use_scheme]);
-		x += w;
-		//y -= 15;
-		l = k->label2;
-		w = TEXTW(l);
-		drw_text(drw, x, y, w, h, 0, l, 0);
-	}
 }
 
 Key *
@@ -405,16 +393,28 @@ unpress(Key *k)
 		case XKB_KEY_BackSpace:
 			zwp_input_method_v2_delete_surrounding_text(im, 1, 0);
 			break;
+		case XKB_KEY_Shift_L:
+			shift = !shift;
+			goto nocommit;
 		case XKB_KEY_Return:
 			zwp_input_method_v2_commit_string(im, "\n");
 			break;
 		default:
-			zwp_input_method_v2_commit_string(im, k->label);
+			if (!shift) {
+				if (k->label)
+					zwp_input_method_v2_commit_string(im, k->label);
+			} else {
+				if (k->label2)
+					zwp_input_method_v2_commit_string(im, k->label2);
+				else if (k->label)
+					zwp_input_method_v2_commit_string(im, k->label);
+			}
 			break;
 		}
 		zwp_input_method_v2_commit(im, serial);
 		serial += 1;
 
+nocommit:
 		k->pressed = false;
 		fprintf(stderr, "unpress of %s, %d\n", k->label, k->pressed);
 	}
@@ -487,7 +487,7 @@ pointermotion(void *data, struct wl_pointer *wl_pointer, uint32_t time, wl_fixed
 	}
 
 	for (i = 0; i < numkeys; i++) {
-		if (!IsModifierKey(keys[i].keysym) && keys[i].pressed && lostfocus != gainedfocus) {
+		if (keys[i].pressed && lostfocus != gainedfocus) {
 			printdbg("Pressed key lost focus: %ld\n", keys[i].keysym);
 			lostfocus = i;
 			ispressingkeysym = 0;
@@ -685,11 +685,19 @@ static const struct swc_panel_listener panellistener = { .docked = &panel_docked
 void
 run(void)
 {
-	struct pollfd fds[2];
+	struct pollfd fds[3];
+	sigset_t mask;
+	struct signalfd_siginfo fdsi;
 	struct timeval tv;
 	double duration = 0.0;
 	int overlayidx = -1;
 	int i, r;
+
+	sigemptyset(&mask);
+	sigaddset(&mask, SIGTERM);
+	if (sigprocmask(SIG_BLOCK, &mask, NULL) == -1) {
+		die("failed to set block signal\n");
+	}
 
 	fds[0].fd = wl_display_get_fd(dpy);
 	fds[0].events = POLLIN;
@@ -697,6 +705,12 @@ run(void)
 	/* TODO use timer_create to create timer for long presses */
 	fds[1].fd = -1;
 	fds[1].events = POLLIN;
+	fds[2].fd = signalfd(-1, &mask, 0);;
+	fds[2].events = POLLIN;
+
+	if (fds[2].fd == -1) {
+		die("failed to create signalfd:");
+	}
 	tv.tv_sec = 0;
 	tv.tv_usec = scan_rate;
 
@@ -710,6 +724,17 @@ run(void)
 			if (wl_display_dispatch(dpy) == -1) {
 				warn("failed to dispatch display:");
 				break;
+			}
+		}
+
+		if (fds[2].revents & POLLIN) {
+			r = read(fds[2].fd, &fdsi, sizeof(fdsi));
+			if (r != sizeof(fdsi)) {
+				warn("failed to read signalinfo");
+			}
+
+			if (fdsi.ssi_signo == SIGTERM) {
+				running = 0;
 			}
 		}
 
@@ -957,11 +982,11 @@ hideoverlay(void)
 }
 
 void
-sigterm(int signo)
+sigterm_handler(int signo)
 {
+	fprintf(stderr, "SIGTERM received\n");
 	running = false;
 	sigtermd = true;
-	printdbg("SIGTERM received\n");
 }
 
 void
@@ -1012,9 +1037,6 @@ init_layers(char *layer_names_list, const char *initial_layer_name)
 void
 printdbg(const char *fmt, ...)
 {
-	if (!debug)
-		return;
-
 	va_list ap;
 	va_start(ap, fmt);
 	vfprintf(stderr, fmt, ap);
@@ -1030,8 +1052,6 @@ main(int argc, char *argv[])
 	char *tmp;
 	int i, xr, yr, bitm;
 	unsigned int wr, hr;
-
-	signal(SIGTERM, sigterm);
 
 	if (OVERLAYS <= 1) {
 		enableoverlays = 0;
