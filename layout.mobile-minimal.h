@@ -1,47 +1,44 @@
 #define KEYS 44
 static Key keys_en[KEYS] = {
-	{ "q", 0, XKB_KEY_q, 1 },
-	{ "w", 0, XKB_KEY_w, 1 },
-	{ "e", 0, XKB_KEY_e, 1 },
-	{ "r", 0, XKB_KEY_r, 1 },
-	{ "t", 0, XKB_KEY_t, 1 },
-	{ "y", 0, XKB_KEY_y, 1 },
-	{ "u", 0, XKB_KEY_u, 1 },
-	{ "i", 0, XKB_KEY_i, 1 },
-	{ "o", 0, XKB_KEY_o, 1 },
-	{ "p", 0, XKB_KEY_p, 1 },
+	{ "q", "Q", XKB_KEY_q, 1 },
+	{ "w", "W", XKB_KEY_w, 1 },
+	{ "e", "E", XKB_KEY_e, 1 },
+	{ "r", "R", XKB_KEY_r, 1 },
+	{ "t", "T", XKB_KEY_t, 1 },
+	{ "y", "Y", XKB_KEY_y, 1 },
+	{ "u", "U", XKB_KEY_u, 1 },
+	{ "i", "I", XKB_KEY_i, 1 },
+	{ "o", "O", XKB_KEY_o, 1 },
+	{ "p", "P", XKB_KEY_p, 1 },
 
 	{ 0 }, /* New row */
 
-	{ "a", 0, XKB_KEY_a, 1 },
-	{ "s", 0, XKB_KEY_s, 1 },
-	{ "d", 0, XKB_KEY_d, 1 },
-	{ "f", 0, XKB_KEY_f, 1 },
-	{ "g", 0, XKB_KEY_g, 1 },
-	{ "h", 0, XKB_KEY_h, 1 },
-	{ "j", 0, XKB_KEY_j, 1 },
-	{ "k", 0, XKB_KEY_k, 1 },
-	{ "l", 0, XKB_KEY_l, 1 },
-	{ ";",":", XKB_KEY_colon, 1 },
-	/*{ "'", XKB_KEY_apostrophe, 2 },*/
+	{ "a", "A", XKB_KEY_a, 1 },
+	{ "s", "S", XKB_KEY_s, 1 },
+	{ "d", "D", XKB_KEY_d, 1 },
+	{ "f", "F", XKB_KEY_f, 1 },
+	{ "g", "G", XKB_KEY_g, 1 },
+	{ "h", "H", XKB_KEY_h, 1 },
+	{ "j", "J", XKB_KEY_j, 1 },
+	{ "k", "K", XKB_KEY_k, 1 },
+	{ "l", "L", XKB_KEY_l, 1 },
 
 	{ 0 }, /* New row */
 
-	{ "Shft", 0, XKB_KEY_Shift_L, 1 },
-	{ "z", 0, XKB_KEY_z, 1 },
-	{ "x", 0, XKB_KEY_x, 1 },
-	{ "c", 0, XKB_KEY_c, 1 },
-	{ "v", 0, XKB_KEY_v, 1 },
-	{ "b", 0, XKB_KEY_b, 1 },
-	{ "n", 0, XKB_KEY_n, 1 },
-	{ "m", 0, XKB_KEY_m, 1 },
-	/*{ "/?", XKB_KEY_slash, 1 },*/
-
-	{ 0 }, /* New row */
-	{ "⇍ Bksp", 0, XKB_KEY_BackSpace, 2 },
+	{ "⇧", 0, XKB_KEY_Shift_L, 1 },
+	{ "z", "Z", XKB_KEY_z, 1 },
+	{ "x", "X", XKB_KEY_x, 1 },
+	{ "c", "C", XKB_KEY_c, 1 },
+	{ "v", "V", XKB_KEY_v, 1 },
+	{ "b", "B", XKB_KEY_b, 1 },
+	{ "n", "N", XKB_KEY_n, 1 },
+	{ "m", "M", XKB_KEY_m, 1 },
 	{ "↺", 0, XKB_KEY_Cancel, 1},
-	{ " ", 0, XKB_KEY_space, 2 },
-	{ "↲ Enter", 0, XKB_KEY_Return, 2 },
+
+	{ 0 }, /* New row */
+	{ "⟵", 0, XKB_KEY_BackSpace, 2 },
+	{ " ", 0, XKB_KEY_space, 5 },
+	{ "↩", 0, XKB_KEY_Return, 2 },
 };
 
 static Key keys_symbols[KEYS] = {
@@ -58,7 +55,7 @@ static Key keys_symbols[KEYS] = {
 
 	{ 0 }, /* New row */
 
-	{ "'", "\"", XKB_KEY_apostrophe, 1 },
+	{ "|", "\"", XKB_KEY_apostrophe, 1 },
 	{ "`", "~", XKB_KEY_grave, 1 },
 	{ "-", "_", XKB_KEY_minus, 1 },
 	{ "=", "+", XKB_KEY_plus, 1 },
@@ -68,17 +65,19 @@ static Key keys_symbols[KEYS] = {
 	{ ".", ">", XKB_KEY_period, 1 },
 	{ "/", "?", XKB_KEY_slash, 1 },
 	{ "\\", "|", XKB_KEY_backslash, 1 },
+	{ ";",":", XKB_KEY_colon, 1 },
+	{ "'", "\"", XKB_KEY_apostrophe, 2 },
 
 	{ 0 }, /* New row */
 
-	{ "", 0, XKB_KEY_Shift_L|XKB_KEY_bar, 1 },
-	{ "⇍ Bksp", 0, XKB_KEY_BackSpace, 2 },
-
-	{ 0 }, /* New row */
+	{ "⇧", 0, XKB_KEY_Shift_L, 1 },
+	{ "", 0, XKB_KEY_Shift_L, 7 },
 	{ "↺", 0, XKB_KEY_Cancel, 1},
-	{ "Shft", 0, XKB_KEY_Shift_L, 1 },
-	{ " ", 0, XKB_KEY_space, 2 },
-	{ "↲ Enter", 0, XKB_KEY_Return, 2 },
+
+	{ 0 }, /* New row */
+	{ "⟵", 0, XKB_KEY_BackSpace, 2 },
+	{ " ", 0, XKB_KEY_space, 5 },
+	{ "↩", 0, XKB_KEY_Return, 2 },
 };
 
 #define OVERLAYS 1

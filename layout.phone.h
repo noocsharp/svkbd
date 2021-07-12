@@ -1,10 +1,9 @@
-#define KEYS 17
+#define KEYS 18
 
 static Key keys_dialer[KEYS] = {
 	{ "1", 0, XKB_KEY_1, 1 },
 	{ "2", 0, XKB_KEY_2, 1 },
 	{ "3", 0, XKB_KEY_3, 1 },
-	{ "⌫", 0, XKB_KEY_BackSpace, 2 },
 
 	{ 0 },
 
@@ -23,7 +22,11 @@ static Key keys_dialer[KEYS] = {
 	{ "*", 0, XKB_KEY_space, 1 },
 	{ "0", 0, XKB_KEY_0, 1 },
 	{ "#", 0, XKB_KEY_period, 1 },
-	{ "↲ Enter", 0, XKB_KEY_Return, 2},
+
+	{ 0 },
+
+	{ "⟵", 0, XKB_KEY_BackSpace, 2 },
+	{ "↲", 0, XKB_KEY_Return, 2},
 };
 
 #define OVERLAYS 1
