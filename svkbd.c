@@ -161,7 +161,7 @@ static uint32_t serial = 0;
 static Key keys[KEYS] = { NULL };
 static Key* layers[LAYERS];
 
-static bool shift = false;
+static bool shift;
 
 void
 cleanup(void)
@@ -396,6 +396,24 @@ unpress(Key *k)
 			goto nocommit;
 		case XKB_KEY_Return:
 			zwp_input_method_v2_commit_string(im, "\n");
+			break;
+		case XKB_KEY_Tab:
+			zwp_input_method_v2_commit_string(im, "\t");
+			break;
+		case XKB_KEY_Up:
+			zwp_input_method_v2_commit_string(im, "\x1B[A");
+			break;
+		case XKB_KEY_Down:
+			zwp_input_method_v2_commit_string(im, "\x1B[B");
+			break;
+		case XKB_KEY_Right:
+			zwp_input_method_v2_commit_string(im, "\x1B[C");
+			break;
+		case XKB_KEY_Left:
+			zwp_input_method_v2_commit_string(im, "\x1B[D");
+			break;
+		case XKB_KEY_XF86Terminal:
+			zwp_input_method_v2_commit_string(im, k->label2);
 			break;
 		default:
 			if (!shift) {
