@@ -210,7 +210,6 @@ void
 drawkeyboard(void)
 {
 	int i;
-	warn("drawing keyboard...");
 	wld_set_target_surface(drw->renderer, drw->surface);
 
 	for (i = 0; i < numkeys; i++) {
@@ -373,7 +372,6 @@ get_press_duration(void)
 void
 unpress(Key *k)
 {
-	warn("sending...\n");
 	int i;
 
 	if (k != NULL) {
